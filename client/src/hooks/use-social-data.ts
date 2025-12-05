@@ -3,11 +3,9 @@ import { supabase } from "@/lib/supabase";
 import { SocialPost } from "@/lib/mockData";
 
 // Map Supabase table names to topic IDs
-// We are guessing the table names based on the topics. 
-// In a real app, these would be dynamic or strictly defined.
 const TABLE_MAPPING: Record<string, string> = {
-  "topic1": "Sustainability",
-  "topic2": "AI Technology"
+  "topic1": "sustainability", 
+  "topic2": "ai_technology"   
 };
 
 export function useSocialData(topicId: string) {
