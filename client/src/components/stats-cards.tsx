@@ -7,10 +7,10 @@ interface StatsCardsProps {
 }
 
 export default function StatsCards({ data }: StatsCardsProps) {
-  const totalEngagements = data.reduce((sum, post) => sum + post.engagements, 0);
-  const uniqueAccounts = new Set(data.map((p) => p.handle)).size;
-  const platforms = new Set(data.map((p) => p.platform)).size;
-  const avgEngagement = Math.round(totalEngagements / data.length);
+  const totalEngagements = data.reduce((sum, post) => sum + (post.engagements || 0), 0);
+  const uniqueAccounts = new Set(data.map((p) => p.handle).filter(Boolean)).size;
+  const platforms = new Set(data.map((p) => p.platform).filter(Boolean)).size;
+  const avgEngagement = data.length > 0 ? Math.round(totalEngagements / data.length) : 0;
 
   const stats = [
     {

@@ -37,6 +37,6 @@ export const topic1Data = generateData("Sustainability", 50);
 export const topic2Data = generateData("AI Technology", 50);
 
 export const topics = [
-  { id: "topic1", name: "Sustainability Green Tech" },
-  { id: "topic2", name: "AI & Future Work" },
+  { id: "topic1", name: "AM-WW" },
+  { id: "topic2", name: "CPTI" },
 ];
