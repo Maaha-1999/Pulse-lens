@@ -163,16 +163,20 @@ export default function Dashboard() {
           </div>
         ) : (
           <>
-            {/* Stats Overview - Uses data filtered by DATE only */}
-            <section>
-              <StatsCards data={dateFilteredData} />
-            </section>
+            {/* Stats Overview - Only show when date is selected */}
+            {date && (
+              <section>
+                <StatsCards data={dateFilteredData} />
+              </section>
+            )}
 
             {/* Main Data Table - Uses data filtered by DATE and TEXT */}
             <section className="glass-panel rounded-xl p-6 border-border/50">
               <div className="mb-6">
                 <h2 className="text-xl font-semibold text-white">Detailed Narratives</h2>
-                <p className="text-sm text-muted-foreground">Filter and analyze individual account performance.</p>
+                <p className="text-sm text-muted-foreground">
+                  {date ? "Filter and analyze individual account performance." : "Select a date to view narratives."}
+                </p>
               </div>
               <DataTable 
                 data={fullyFilteredData} 
