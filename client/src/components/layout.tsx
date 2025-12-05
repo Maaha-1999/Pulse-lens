@@ -35,7 +35,7 @@ export default function Layout({ children }: LayoutProps) {
             const isActive = location === item.href;
             return (
               <Link key={item.href} href={item.href}>
-                <div
+                <a
                   className={cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer",
                     isActive
@@ -45,7 +45,7 @@ export default function Layout({ children }: LayoutProps) {
                 >
                   <item.icon className={cn("w-4 h-4", isActive ? "text-primary" : "text-muted-foreground")} />
                   {item.label}
-                </div>
+                </a>
               </Link>
             );
           })}
