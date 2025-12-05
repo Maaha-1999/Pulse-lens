@@ -1,16 +1,26 @@
 import Layout from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from "recharts";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Cell } from "recharts";
 
 const data = [
-  { name: "Mon", engagement: 4000, posts: 24 },
-  { name: "Tue", engagement: 3000, posts: 18 },
-  { name: "Wed", engagement: 2000, posts: 12 },
-  { name: "Thu", engagement: 2780, posts: 20 },
-  { name: "Fri", engagement: 1890, posts: 15 },
-  { name: "Sat", engagement: 2390, posts: 10 },
-  { name: "Sun", engagement: 3490, posts: 28 },
+  { name: "Mon", engagement: 4000 },
+  { name: "Tue", engagement: 3000 },
+  { name: "Wed", engagement: 2000 },
+  { name: "Thu", engagement: 2780 },
+  { name: "Fri", engagement: 1890 },
+  { name: "Sat", engagement: 2390 },
+  { name: "Sun", engagement: 3490 },
 ];
+
+const authorData = [
+  { name: "@eco_warrior", count: 145 },
+  { name: "@tech_future", count: 123 },
+  { name: "@innovate_daily", count: 98 },
+  { name: "@green_living", count: 87 },
+  { name: "@ai_insider", count: 76 },
+];
+
+const AUTHOR_COLORS = ["#22d3ee", "#818cf8", "#a78bfa", "#c084fc", "#e879f9"];
 
 export default function Analytics() {
   return (
@@ -50,20 +60,24 @@ export default function Analytics() {
 
           <Card className="glass-panel border-border/50">
             <CardHeader>
-              <CardTitle>Post Volume by Day</CardTitle>
+              <CardTitle>Top Most Common Authors</CardTitle>
             </CardHeader>
             <CardContent className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                  <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                <BarChart data={authorData} layout="vertical" margin={{ left: 40, right: 20, top: 10, bottom: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={false} />
+                  <XAxis type="number" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis dataKey="name" type="category" stroke="#e2e8f0" fontSize={12} tickLine={false} axisLine={false} width={100} />
                   <Tooltip 
                     cursor={{fill: 'rgba(255,255,255,0.05)'}}
                     contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b' }}
                     itemStyle={{ color: '#e2e8f0' }}
                   />
-                  <Bar dataKey="posts" fill="#a855f7" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={32}>
+                    {authorData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={AUTHOR_COLORS[index % AUTHOR_COLORS.length]} />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
