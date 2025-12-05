@@ -13,7 +13,6 @@ export default function Layout({ children }: LayoutProps) {
   const navItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/" },
     { icon: BarChart2, label: "Analytics", href: "/analytics" },
-    { icon: Database, label: "Data Sources", href: "/sources" },
     { icon: Settings, label: "Settings", href: "/settings" },
   ];
 
