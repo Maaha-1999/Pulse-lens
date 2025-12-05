@@ -1,11 +1,12 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { SocialPost } from "@/lib/mockData";
 
-// Map Supabase table names to topic IDs
+// Map topic IDs to actual Supabase table names
 const TABLE_MAPPING: Record<string, string> = {
-  "topic1": "sustainability", 
-  "topic2": "ai_technology"   
+  "topic1": "FM", 
+  "topic2": "PTI"   
 };
 
 export function useSocialData(topicId: string) {
@@ -21,22 +22,20 @@ export function useSocialData(topicId: string) {
 
       if (error) {
         console.error(`Error fetching data from ${tableName}:`, error);
-        // Fallback to empty array or handle error appropriately
         throw error;
       }
 
       // Transform Supabase data to match SocialPost interface
-      // Assuming Supabase columns are snake_case as per user description (mostly)
       return (data || []).map((row: any) => ({
-        id: row.ID || row.id,
-        accountName: row.Account_Name || row.account_name,
-        handle: row.Handle || row.handle,
-        platform: row.Platform || row.platform,
-        location: row.Location || row.location,
-        engagements: row.Engagements || row.engagements,
-        narrative: row.Narrative || row.narrative,
-        geoCoordinates: row.Geo_Coordinates || row.geo_coordinates,
-        date: row.Date || row.date,
+        id: row.id || row.ID,
+        accountName: row.account || row.Account || row.account_name || row.Account_Name || "",
+        handle: row.handle || row.Handle || row.account || row.Account || "",
+        platform: row.platform || row.Platform || "unknown",
+        location: row.location || row.Location || "",
+        engagements: row.engagement || row.Engagement || row.engagements || row.Engagements || 0,
+        narrative: row.narrative || row.Narrative || "",
+        geoCoordinates: row.geo_coordinates || row.Geo_Coordinates || "",
+        date: row.date || row.Date || new Date().toISOString(),
       })) as SocialPost[];
     },
   });
