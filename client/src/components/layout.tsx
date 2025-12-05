@@ -1,7 +1,13 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, BarChart2, Settings, Database, Layers } from "lucide-react";
+import { LayoutDashboard, BarChart2, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logoImage from "@assets/generated_images/a_modern_abstract_logo_for_a_data_dashboard_named_pulselens.png";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -13,7 +19,6 @@ export default function Layout({ children }: LayoutProps) {
   const navItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/" },
     { icon: BarChart2, label: "Analytics", href: "/analytics" },
-    { icon: Settings, label: "Settings", href: "/settings" },
   ];
 
   return (
@@ -51,14 +56,25 @@ export default function Layout({ children }: LayoutProps) {
         </nav>
 
         <div className="p-4 border-t border-border/50">
-          <div className="glass-card p-3 rounded-lg flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-linear-to-br from-cyan-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white">
-              JD
+          <div className="glass-card p-3 rounded-lg flex items-center justify-between gap-2">
+            <div className="flex items-center gap-3 overflow-hidden">
+              <div className="w-8 h-8 rounded-full bg-linear-to-br from-cyan-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
+                JD
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs font-medium truncate">John Doe</span>
+                <span className="text-[10px] text-muted-foreground truncate">Admin</span>
+              </div>
             </div>
-            <div className="flex flex-col">
-              <span className="text-xs font-medium">John Doe</span>
-              <span className="text-[10px] text-muted-foreground">Admin</span>
-            </div>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full shrink-0">
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Log Out</TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </aside>
