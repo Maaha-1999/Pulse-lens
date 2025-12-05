@@ -29,11 +29,19 @@ import { cn } from "@/lib/utils";
 
 interface DataTableProps {
   data: SocialPost[];
+  filter: string;
+  setFilter: (value: string) => void;
+  date: Date | undefined;
+  setDate: (date: Date | undefined) => void;
 }
 
-export default function DataTable({ data }: DataTableProps) {
-  const [filter, setFilter] = useState("");
-  const [date, setDate] = useState<Date | undefined>(undefined);
+export default function DataTable({ 
+  data, 
+  filter, 
+  setFilter, 
+  date, 
+  setDate 
+}: DataTableProps) {
   const [visibleColumns, setVisibleColumns] = useState({
     accountName: true,
     handle: true,
@@ -44,22 +52,6 @@ export default function DataTable({ data }: DataTableProps) {
     narrative: true,
     date: true,
   });
-
-  const filteredData = useMemo(() => {
-    const lowerFilter = filter.toLowerCase();
-    return data.filter((post) => {
-      const matchesText = 
-        post.accountName.toLowerCase().includes(lowerFilter) ||
-        post.handle.toLowerCase().includes(lowerFilter) ||
-        post.narrative.toLowerCase().includes(lowerFilter);
-      
-      const matchesDate = date 
-        ? post.date === format(date, "yyyy-MM-dd")
-        : true;
-        
-      return matchesText && matchesDate;
-    });
-  }, [data, filter, date]);
 
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
@@ -160,14 +152,14 @@ export default function DataTable({ data }: DataTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredData.length === 0 ? (
+            {data.length === 0 ? (
                <TableRow>
                 <TableCell colSpan={9} className="h-24 text-center">
                   No results found.
                 </TableCell>
               </TableRow>
             ) : (
-              filteredData.map((post) => (
+              data.map((post) => (
                 <TableRow key={post.id} className="hover:bg-white/5 border-border/50 transition-colors">
                   <TableCell className="font-mono text-xs text-muted-foreground">{post.id}</TableCell>
                   
