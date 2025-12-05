@@ -3,10 +3,11 @@ import { format } from "date-fns";
 import Layout from "@/components/layout";
 import StatsCards from "@/components/stats-cards";
 import DataTable from "@/components/data-table";
-import { topic1Data, topic2Data, topics } from "@/lib/mockData";
+import { topics } from "@/lib/mockData";
+import { useSocialData } from "@/hooks/use-social-data";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Download, Calendar as CalendarIcon, X } from "lucide-react";
+import { Download, Calendar as CalendarIcon, X, Loader2 } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -20,7 +21,7 @@ export default function Dashboard() {
   const [filter, setFilter] = useState("");
   const [date, setDate] = useState<Date | undefined>(undefined);
   
-  const rawData = activeTopic === "topic1" ? topic1Data : topic2Data;
+  const { data: rawData = [], isLoading, error } = useSocialData(activeTopic);
   const currentTopicName = topics.find(t => t.id === activeTopic)?.name;
 
   // Filter data based on Date ONLY (for Stats)
@@ -35,9 +36,9 @@ export default function Dashboard() {
   const fullyFilteredData = useMemo(() => {
     const lowerFilter = filter.toLowerCase();
     return dateFilteredData.filter((post) => 
-      post.accountName.toLowerCase().includes(lowerFilter) ||
-      post.handle.toLowerCase().includes(lowerFilter) ||
-      post.narrative.toLowerCase().includes(lowerFilter)
+      (post.accountName || "").toLowerCase().includes(lowerFilter) ||
+      (post.handle || "").toLowerCase().includes(lowerFilter) ||
+      (post.narrative || "").toLowerCase().includes(lowerFilter)
     );
   }, [dateFilteredData, filter]);
 
@@ -50,14 +51,14 @@ export default function Dashboard() {
       headers.join(","),
       ...fullyFilteredData.map(row => [
         row.id,
-        `"${row.accountName.replace(/"/g, '""')}"`,
-        row.handle,
-        row.platform,
-        `"${row.location.replace(/"/g, '""')}"`,
-        `"${row.geoCoordinates}"`,
-        row.engagements,
-        `"${row.narrative.replace(/"/g, '""')}"`,
-        row.date
+        `"${(row.accountName || "").replace(/"/g, '""')}"`,
+        row.handle || "",
+        row.platform || "",
+        `"${(row.location || "").replace(/"/g, '""')}"`,
+        `"${row.geoCoordinates || ""}"`,
+        row.engagements || 0,
+        `"${(row.narrative || "").replace(/"/g, '""')}"`,
+        row.date || ""
       ].join(","))
     ].join("\n");
 
@@ -125,6 +126,7 @@ export default function Dashboard() {
             <Button 
               onClick={handleExport}
               className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_20px_rgba(34,211,238,0.3)]"
+              disabled={isLoading || rawData.length === 0}
             >
               <Download className="w-4 h-4 mr-2" />
               Export Report
@@ -149,24 +151,37 @@ export default function Dashboard() {
           </TabsList>
         </Tabs>
 
-        {/* Stats Overview - Uses data filtered by DATE only */}
-        <section>
-           <StatsCards data={dateFilteredData} />
-        </section>
-
-        {/* Main Data Table - Uses data filtered by DATE and TEXT */}
-        <section className="glass-panel rounded-xl p-6 border-border/50">
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold text-white">Detailed Narratives</h2>
-            <p className="text-sm text-muted-foreground">Filter and analyze individual account performance.</p>
+        {/* Loading / Error States */}
+        {isLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
-          <DataTable 
-            data={fullyFilteredData} 
-            filter={filter}
-            setFilter={setFilter}
-          />
-        </section>
+        ) : error ? (
+          <div className="glass-panel rounded-xl p-6 border-destructive/50 text-center">
+            <p className="text-destructive mb-2">Failed to load data from Supabase.</p>
+            <p className="text-sm text-muted-foreground">Please check your connection and try again.</p>
+          </div>
+        ) : (
+          <>
+            {/* Stats Overview - Uses data filtered by DATE only */}
+            <section>
+              <StatsCards data={dateFilteredData} />
+            </section>
 
+            {/* Main Data Table - Uses data filtered by DATE and TEXT */}
+            <section className="glass-panel rounded-xl p-6 border-border/50">
+              <div className="mb-6">
+                <h2 className="text-xl font-semibold text-white">Detailed Narratives</h2>
+                <p className="text-sm text-muted-foreground">Filter and analyze individual account performance.</p>
+              </div>
+              <DataTable 
+                data={fullyFilteredData} 
+                filter={filter}
+                setFilter={setFilter}
+              />
+            </section>
+          </>
+        )}
       </div>
     </Layout>
   );
