@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { SocialPost } from "@/lib/mockData";
 import {
   Table,
@@ -15,32 +15,20 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, SlidersHorizontal, Twitter, Facebook, Instagram, Linkedin, MapPin, Calendar as CalendarIcon, Globe, X } from "lucide-react";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { Search, SlidersHorizontal, Twitter, Facebook, Instagram, Linkedin, MapPin, Globe } from "lucide-react";
 
 interface DataTableProps {
   data: SocialPost[];
   filter: string;
   setFilter: (value: string) => void;
-  date: Date | undefined;
-  setDate: (date: Date | undefined) => void;
 }
 
 export default function DataTable({ 
   data, 
   filter, 
   setFilter, 
-  date, 
-  setDate 
 }: DataTableProps) {
   const [visibleColumns, setVisibleColumns] = useState({
     accountName: true,
@@ -76,40 +64,6 @@ export default function DataTable({
               className="pl-9 bg-secondary/30 border-border/50 focus:border-primary/50 transition-colors"
             />
           </div>
-
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className={cn(
-                  "w-[240px] justify-start text-left font-normal bg-secondary/30 border-border/50",
-                  !date && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {date ? format(date, "PPP") : <span>Pick a date</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={setDate}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-          
-          {date && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => setDate(undefined)}
-              className="h-9 w-9"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
         </div>
         
         <DropdownMenu>

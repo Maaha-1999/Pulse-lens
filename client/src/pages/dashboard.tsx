@@ -6,7 +6,14 @@ import DataTable from "@/components/data-table";
 import { topic1Data, topic2Data, topics } from "@/lib/mockData";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, Calendar as CalendarIcon, X } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
   const [activeTopic, setActiveTopic] = useState(topics[0].id);
@@ -79,6 +86,42 @@ export default function Dashboard() {
           </div>
           
           <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-[240px] justify-start text-left font-normal bg-secondary/30 border-border/50 hover:bg-secondary/50",
+                      !date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date ? format(date, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              
+              {date && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setDate(undefined)}
+                  className="h-9 w-9 hover:bg-secondary/50"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+
             <Button 
               onClick={handleExport}
               className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_20px_rgba(34,211,238,0.3)]"
@@ -92,9 +135,6 @@ export default function Dashboard() {
         {/* Topic Tabs */}
         <Tabs value={activeTopic} onValueChange={(val) => {
           setActiveTopic(val);
-          // Optional: Reset filters when changing topic? 
-          // setFilter(""); 
-          // setDate(undefined);
         }} className="w-full">
           <TabsList className="bg-secondary/40 border border-border/50 p-1 h-auto">
             {topics.map((topic) => (
@@ -124,8 +164,6 @@ export default function Dashboard() {
             data={fullyFilteredData} 
             filter={filter}
             setFilter={setFilter}
-            date={date}
-            setDate={setDate}
           />
         </section>
 
