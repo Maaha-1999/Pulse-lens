@@ -56,7 +56,7 @@ export default function Dashboard() {
 
   const handleExport = () => {
     // Define CSV headers
-    const headers = ["ID", "Account Name", "Handle", "Platform", "Location", "Geo Coordinates", "Engagements", "Narrative", "Date"];
+    const headers = ["ID", "Account Name", "Handle", "Platform", "Location", "Geo Coordinates", "Engagements", "Narrative", "Date From", "Date To"];
     
     // Convert data to CSV format
     const csvContent = [
@@ -70,7 +70,8 @@ export default function Dashboard() {
         `"${row.geoCoordinates || ""}"`,
         row.engagements || 0,
         `"${(row.narrative || "").replace(/"/g, '""')}"`,
-        row.date || ""
+        row.dateFrom || "",
+        row.dateTo || ""
       ].join(","))
     ].join("\n");
 

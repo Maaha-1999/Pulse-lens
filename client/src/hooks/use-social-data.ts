@@ -66,8 +66,11 @@ MOST LIKELY CAUSE: Row Level Security (RLS) is blocking access
 
       // Transform Supabase data to match SocialPost interface
       const transformed = (data || []).map((row: any, index: number) => {
-        // Use Date_From as the primary date, fallback to Date_To or current date
-        const dateValue = row.Date_From || row.date_from || row.Date_To || row.date_to || row.date || row.Date || row.created_at || new Date().toISOString().split('T')[0];
+        // Extract Date_From and Date_To
+        const dateFromValue = row.Date_From || row.date_from || "";
+        const dateToValue = row.Date_To || row.date_to || "";
+        // Use Date_From as the primary date for backwards compatibility
+        const dateValue = dateFromValue || dateToValue || row.date || row.Date || row.created_at || new Date().toISOString().split('T')[0];
 
         const result = {
           id: row.id || row.ID || `${tableName}-${index}`,
@@ -79,6 +82,8 @@ MOST LIKELY CAUSE: Row Level Security (RLS) is blocking access
           narrative: row.narrative || row.Narrative || row.message || row.Message || "",
           geoCoordinates: row.geo_coordinates || row.Geo_Coordinates || row.coordinates || "",
           date: dateValue,
+          dateFrom: dateFromValue,
+          dateTo: dateToValue,
         };
         return result;
       }) as SocialPost[];

@@ -38,7 +38,8 @@ export default function DataTable({
     geoCoordinates: true,
     engagements: true,
     narrative: true,
-    date: true,
+    dateFrom: true,
+    dateTo: true,
   });
 
   const getPlatformIcon = (platform: string) => {
@@ -102,7 +103,8 @@ export default function DataTable({
               {visibleColumns.geoCoordinates && <TableHead>Geo Coords</TableHead>}
               {visibleColumns.engagements && <TableHead className="text-right">Engagements</TableHead>}
               {visibleColumns.narrative && <TableHead className="w-[300px]">Narrative</TableHead>}
-              {visibleColumns.date && <TableHead className="text-right">Date</TableHead>}
+              {visibleColumns.dateFrom && <TableHead className="text-right">Date From</TableHead>}
+              {visibleColumns.dateTo && <TableHead className="text-right">Date To</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -168,9 +170,15 @@ export default function DataTable({
                     </TableCell>
                   )}
                   
-                  {visibleColumns.date && (
+                  {visibleColumns.dateFrom && (
                     <TableCell className="text-right text-xs text-muted-foreground font-mono">
-                      {post.date}
+                      {(post as any).dateFrom || post.date || "-"}
+                    </TableCell>
+                  )}
+                  
+                  {visibleColumns.dateTo && (
+                    <TableCell className="text-right text-xs text-muted-foreground font-mono">
+                      {(post as any).dateTo || "-"}
                     </TableCell>
                   )}
                 </TableRow>

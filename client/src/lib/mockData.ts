@@ -10,6 +10,8 @@ export interface SocialPost {
   narrative: string;
   geoCoordinates: string;
   date: string;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 const PLATFORMS = ["Twitter", "Facebook", "Instagram", "LinkedIn"] as const;
