@@ -36,6 +36,9 @@ export function useSocialData(topicId: string) {
 
       // Transform Supabase data to match SocialPost interface
       const transformed = (data || []).map((row: any, index: number) => {
+        // Use Date_From as the primary date, fallback to Date_To or current date
+        const dateValue = row.Date_From || row.date_from || row.Date_To || row.date_to || row.date || row.Date || row.created_at || new Date().toISOString().split('T')[0];
+        
         const result = {
           id: row.id || row.ID || `${tableName}-${index}`,
           accountName: row.account || row.Account || row.account_name || row.Account_Name || `Account ${index}`,
@@ -45,7 +48,7 @@ export function useSocialData(topicId: string) {
           engagements: parseInt(row.engagement || row.Engagement || row.engagements || row.Engagements || 0),
           narrative: row.narrative || row.Narrative || row.message || row.Message || "",
           geoCoordinates: row.geo_coordinates || row.Geo_Coordinates || row.coordinates || "",
-          date: row.date || row.Date || row.created_at || new Date().toISOString().split('T')[0],
+          date: dateValue,
         };
         return result;
       }) as SocialPost[];
