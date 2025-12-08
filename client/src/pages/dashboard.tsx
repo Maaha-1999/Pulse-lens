@@ -26,10 +26,22 @@ export default function Dashboard() {
 
   // Filter data based on Date ONLY (for Stats)
   const dateFilteredData = useMemo(() => {
-    return rawData.filter((post) => {
-      if (!date) return true;
-      return post.date === format(date, "yyyy-MM-dd");
+    console.log(`Raw data count: ${rawData.length}`);
+    if (!date) {
+      console.log("No date filter, showing all data");
+      return rawData;
+    }
+    
+    const targetDate = format(date, "yyyy-MM-dd");
+    console.log(`Filtering for date: ${targetDate}`);
+    
+    const filtered = rawData.filter((post) => {
+      const postDate = post.date?.split('T')[0]; // Handle ISO format
+      return postDate === targetDate;
     });
+    
+    console.log(`Filtered data count: ${filtered.length}`);
+    return filtered;
   }, [rawData, date]);
 
   // Filter data based on Date AND Text Search (for Table & Export)
@@ -175,7 +187,11 @@ export default function Dashboard() {
               <div className="mb-6">
                 <h2 className="text-xl font-semibold text-white">Detailed Narratives</h2>
                 <p className="text-sm text-muted-foreground">
-                  {date ? "Filter and analyze individual account performance." : "Select a date to view narratives."}
+                  {rawData.length === 0 
+                    ? "No data available. Check your Supabase connection and table setup." 
+                    : date 
+                      ? `Showing ${fullyFilteredData.length} narratives for ${format(date, "PPP")}` 
+                      : `Showing all ${fullyFilteredData.length} narratives. Select a date to filter.`}
                 </p>
               </div>
               <DataTable 
