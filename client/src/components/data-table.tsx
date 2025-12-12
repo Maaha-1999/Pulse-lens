@@ -164,9 +164,10 @@ export default function DataTable({
                   
                   {visibleColumns.narrative && (
                     <TableCell>
-                      <p className="text-xs text-muted-foreground line-clamp-2 max-w-[300px]">
+                      <p className="text-xs text-muted-foreground line-clamp-2 max-w-[300px] whitespace-normal break-words">
                         {post.narrative}
                       </p>
+                      {process.env.NODE_ENV === "development" ? (console.debug("narrative:", post.narrative), null) : null}
                     </TableCell>
                   )}
                   

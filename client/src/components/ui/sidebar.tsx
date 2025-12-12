@@ -126,6 +126,76 @@ function SidebarProvider({
     [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
   )
 
+  // Manage resizable width (in px). Persist in localStorage.
+  const STORAGE_KEY = "sidebar_width_px"
+  const defaultPx = 16 * 16 // 16rem at 16px root
+  const [widthPx, setWidthPx] = React.useState<number>(() => {
+    try {
+      const v = localStorage.getItem(STORAGE_KEY)
+      return v ? Number(v) : defaultPx
+    } catch (e) {
+      return defaultPx
+    }
+  })
+
+  const minWidth = 120
+  const maxWidth = 640
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, String(widthPx))
+    } catch (e) {
+      // ignore
+    }
+  }, [widthPx])
+
+  // Drag handlers
+  const startRef = React.useRef<{ startX: number; startWidth: number } | null>(null)
+
+  const onMouseMove = React.useCallback((ev: MouseEvent) => {
+    if (!startRef.current) return
+    ev.preventDefault()
+    const dx = ev.clientX - startRef.current.startX
+    const newW = Math.max(minWidth, Math.min(maxWidth, startRef.current.startWidth + dx))
+    setWidthPx(newW)
+  }, [])
+
+  const onMouseUp = React.useCallback(() => {
+    startRef.current = null
+    document.body.style.userSelect = "auto"
+    window.removeEventListener("mousemove", onMouseMove)
+    window.removeEventListener("mouseup", onMouseUp)
+  }, [onMouseMove])
+
+  const handleMouseDown = React.useCallback((ev: React.MouseEvent) => {
+    startRef.current = { startX: ev.clientX, startWidth: widthPx }
+    document.body.style.userSelect = "none"
+    window.addEventListener("mousemove", onMouseMove)
+    window.addEventListener("mouseup", onMouseUp)
+  }, [widthPx, onMouseMove, onMouseUp])
+
+  // Touch support
+  const onTouchMove = React.useCallback((ev: TouchEvent) => {
+    if (!startRef.current) return
+    const t = ev.touches[0]
+    const dx = t.clientX - startRef.current.startX
+    const newW = Math.max(minWidth, Math.min(maxWidth, startRef.current.startWidth + dx))
+    setWidthPx(newW)
+  }, [])
+
+  const onTouchEnd = React.useCallback(() => {
+    startRef.current = null
+    window.removeEventListener("touchmove", onTouchMove)
+    window.removeEventListener("touchend", onTouchEnd)
+  }, [onTouchMove])
+
+  const handleTouchStart = React.useCallback((ev: React.TouchEvent) => {
+    const t = ev.touches[0]
+    startRef.current = { startX: t.clientX, startWidth: widthPx }
+    window.addEventListener("touchmove", onTouchMove)
+    window.addEventListener("touchend", onTouchEnd)
+  }, [widthPx, onTouchMove, onTouchEnd])
+
   return (
     <SidebarContext.Provider value={contextValue}>
       <TooltipProvider delayDuration={0}>
@@ -133,18 +203,36 @@ function SidebarProvider({
           data-slot="sidebar-wrapper"
           style={
             {
-              "--sidebar-width": SIDEBAR_WIDTH,
+              "--sidebar-width": `${widthPx}px`,
               "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
               ...style,
             } as React.CSSProperties
           }
           className={cn(
-            "group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-full",
+            "group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-full relative",
             className
           )}
           {...props}
         >
           {children}
+
+          {/* Resizer bar placed at the sidebar edge (left sidebar). */}
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize sidebar"
+            onMouseDown={handleMouseDown}
+            onTouchStart={handleTouchStart}
+            className="absolute top-0 bottom-0 z-40 hidden md:flex items-center justify-center"
+            style={{ left: `calc(var(--sidebar-width) - 6px)`, width: "12px", cursor: "col-resize" }}
+            title="Resize sidebar"
+          >
+            <div className="flex h-10 items-center justify-center gap-1 rounded-md px-1 hover:bg-white/6 transition-colors">
+              <span className="block h-6 w-[2px] bg-white/30 rounded" />
+              <span className="block h-6 w-[2px] bg-white/30 rounded" />
+              <span className="block h-6 w-[2px] bg-white/30 rounded" />
+            </div>
+          </div>
         </div>
       </TooltipProvider>
     </SidebarContext.Provider>

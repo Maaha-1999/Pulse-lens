@@ -19,30 +19,101 @@ import { cn } from "@/lib/utils";
 export default function Dashboard() {
   const [activeTopic, setActiveTopic] = useState(topics[0].id);
   const [filter, setFilter] = useState("");
-  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   
   const { data: rawData = [], isLoading, error } = useSocialData(activeTopic);
   const currentTopicName = topics.find(t => t.id === activeTopic)?.name;
 
-  // Filter data based on Date ONLY (for Stats)
+  // Handlers to ensure `dateFrom` <= `dateTo`. If user selects inverted range, swap values.
+  const handleSelectFrom = (d?: Date | undefined) => {
+    if (!d) {
+      setDateFrom(undefined);
+      return;
+    }
+    if (dateTo && d > dateTo) {
+      // swap
+      setDateFrom(dateTo);
+      setDateTo(d);
+      return;
+    }
+    setDateFrom(d);
+  };
+
+  const handleSelectTo = (d?: Date | undefined) => {
+    if (!d) {
+      setDateTo(undefined);
+      return;
+    }
+    if (dateFrom && d < dateFrom) {
+      // swap
+      setDateTo(dateFrom);
+      setDateFrom(d);
+      return;
+    }
+    setDateTo(d);
+  };
+
+  // Filter data based on Date Range (for Stats)
   const dateFilteredData = useMemo(() => {
     console.log(`Raw data count: ${rawData.length}`);
-    if (!date) {
-      console.log("No date filter, showing all data");
+
+    if (!dateFrom && !dateTo) {
+      console.log("No date range selected, showing all data");
       return rawData;
     }
-    
-    const targetDate = format(date, "yyyy-MM-dd");
-    console.log(`Filtering for date: ${targetDate}`);
-    
+
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const toYMD = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+    const fromYMD = dateFrom ? toYMD(dateFrom) : undefined;
+    const toYMDStr = dateTo ? toYMD(dateTo) : undefined;
+
+    console.log(`Filtering for range: ${fromYMD || "(none)"} -> ${toYMDStr || "(none)"}`);
+
     const filtered = rawData.filter((post) => {
-      const postDate = post.date?.split('T')[0]; // Handle ISO format
-      return postDate === targetDate;
+      // Parse post dateFrom/dateTo (fall back to post.date) into local YMD string
+      const rawFrom = post.dateFrom || post.date || "";
+      const rawTo = post.dateTo || rawFrom;
+
+      const parseToLocalYMD = (s: string) => {
+        if (!s) return "";
+        const str = String(s).trim();
+        // If already normalized YYYY-MM-DD from the data layer, return directly
+        if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+        const d = new Date(str);
+        if (Number.isNaN(d.getTime())) return "";
+        // Use UTC getters to avoid local timezone shifting the date
+        const y = d.getUTCFullYear();
+        const m = pad(d.getUTCMonth() + 1);
+        const day = pad(d.getUTCDate());
+        return `${y}-${m}-${day}`;
+      };
+
+      const postFrom = parseToLocalYMD(rawFrom);
+      const postTo = parseToLocalYMD(rawTo) || postFrom;
+
+      // If both from and to are selected, check for any overlap
+      if (fromYMD && toYMDStr) {
+        return postFrom <= toYMDStr && postTo >= fromYMD;
+      }
+
+      // If only from is selected, check whether the post covers that day
+      if (fromYMD && !toYMDStr) {
+        return postFrom <= fromYMD && postTo >= fromYMD;
+      }
+
+      // If only to is selected, check whether the post covers that day
+      if (!fromYMD && toYMDStr) {
+        return postFrom <= toYMDStr && postTo >= toYMDStr;
+      }
+
+      return true;
     });
-    
+
     console.log(`Filtered data count: ${filtered.length}`);
     return filtered;
-  }, [rawData, date]);
+  }, [rawData, dateFrom, dateTo]);
 
   // Filter data based on Date AND Text Search (for Table & Export)
   const fullyFilteredData = useMemo(() => {
@@ -99,52 +170,86 @@ export default function Dashboard() {
             </p>
           </div>
           
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-[240px] justify-start text-left font-normal bg-secondary/30 border-border/50 hover:bg-secondary/50",
-                      !date && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-              
-              {date && (
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => setDate(undefined)}
-                  className="h-9 w-9 hover:bg-secondary/50"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-[180px] justify-start text-left font-normal bg-secondary/30 border-border/50 hover:bg-secondary/50",
+                          !dateFrom && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dateFrom ? `From: ${format(dateFrom, "PPP")}` : <span>Date From</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                      <Calendar
+                        mode="single"
+                        selected={dateFrom}
+                        onSelect={handleSelectFrom}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
 
-            <Button 
-              onClick={handleExport}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_20px_rgba(34,211,238,0.3)]"
-              disabled={isLoading || rawData.length === 0}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Export Report
-            </Button>
-          </div>
+                  {dateFrom && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => setDateFrom(undefined)}
+                      className="h-9 w-9 hover:bg-secondary/50"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-[180px] justify-start text-left font-normal bg-secondary/30 border-border/50 hover:bg-secondary/50",
+                          !dateTo && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dateTo ? `To: ${format(dateTo, "PPP")}` : <span>Date To</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                      <Calendar
+                        mode="single"
+                        selected={dateTo}
+                        onSelect={handleSelectTo}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+
+                  {dateTo && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => setDateTo(undefined)}
+                      className="h-9 w-9 hover:bg-secondary/50"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+
+                <Button 
+                  onClick={handleExport}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_20px_rgba(34,211,238,0.3)]"
+                  disabled={isLoading || rawData.length === 0}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Export Report
+                </Button>
+              </div>
         </div>
 
         {/* Topic Tabs */}
@@ -176,8 +281,8 @@ export default function Dashboard() {
           </div>
         ) : (
           <>
-            {/* Stats Overview - Only show when date is selected */}
-            {date && (
+            {/* Stats Overview - Only show when a date/from-to is selected */}
+            {(dateFrom || dateTo) && (
               <section>
                 <StatsCards data={dateFilteredData} />
               </section>
@@ -188,11 +293,16 @@ export default function Dashboard() {
               <div className="mb-6">
                 <h2 className="text-xl font-semibold text-white">Detailed Narratives</h2>
                 <p className="text-sm text-muted-foreground">
-                  {rawData.length === 0 
-                    ? "No data available. Check your Supabase connection and table setup." 
-                    : date 
-                      ? `Showing ${fullyFilteredData.length} narratives for ${format(date, "PPP")}` 
-                      : `Showing all ${fullyFilteredData.length} narratives. Select a date to filter.`}
+                  {rawData.length === 0 ? (
+                    "No data available. Check your Supabase connection and table setup."
+                  ) : (dateFrom || dateTo) ? (
+                    dateFrom && dateTo ?
+                      `Showing ${fullyFilteredData.length} narratives for ${format(dateFrom, "PPP")} - ${format(dateTo, "PPP")}` :
+                      dateFrom ? `Showing ${fullyFilteredData.length} narratives from ${format(dateFrom, "PPP")}` :
+                      `Showing ${fullyFilteredData.length} narratives up to ${format(dateTo!, "PPP")}`
+                  ) : (
+                    `Showing all ${fullyFilteredData.length} narratives. Select a date range to filter.`
+                  )}
                 </p>
               </div>
               <DataTable 

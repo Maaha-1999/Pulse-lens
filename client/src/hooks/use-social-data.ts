@@ -21,7 +21,8 @@ export function useSocialData(topicId: string) {
       console.log(`Fetching data from table: ${tableName}`);
       const { data, error } = await supabase
         .from(tableName)
-        .select("*");
+        .select("*")
+        .order("Date_From", { ascending: false });
 
       if (error) {
         console.error(`❌ Error fetching data from ${tableName}:`, error);
@@ -64,13 +65,52 @@ MOST LIKELY CAUSE: Row Level Security (RLS) is blocking access
         `);
       }
 
+      // Helper to parse various date strings into local YYYY-MM-DD
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const toYMD = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      const parseToLocalYMD = (s: any) => {
+        if (!s) return "";
+        const str = String(s).trim();
+        // If already in YYYY-MM-DD format, return as-is
+        if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+        const d = new Date(str);
+        if (Number.isNaN(d.getTime())) return "";
+        // Use UTC getters to extract the date portion from ISO datetimes
+        const y = d.getUTCFullYear();
+        const m = pad(d.getUTCMonth() + 1);
+        const day = pad(d.getUTCDate());
+        return `${y}-${m}-${day}`;
+      };
+
       // Transform Supabase data to match SocialPost interface
       const transformed = (data || []).map((row: any, index: number) => {
-        // Extract Date_From and Date_To
-        const dateFromValue = row.Date_From || row.date_from || "";
-        const dateToValue = row.Date_To || row.date_to || "";
+        // Extract Date_From and Date_To (various column names)
+        const rawDateFrom = row.Date_From || row.date_from || row.DateFrom || row.dateFrom || "";
+        const rawDateTo = row.Date_To || row.date_to || row.DateTo || row.dateTo || "";
         // Use Date_From as the primary date for backwards compatibility
-        const dateValue = dateFromValue || dateToValue || row.date || row.Date || row.created_at || new Date().toISOString().split('T')[0];
+        const rawDatePrimary = rawDateFrom || rawDateTo || row.date || row.Date || row.created_at || new Date();
+
+        const dateFromValue = parseToLocalYMD(rawDateFrom);
+        const dateToValue = parseToLocalYMD(rawDateTo);
+        const dateValue = parseToLocalYMD(rawDatePrimary);
+
+        const rawNarrative = row.narrative || row.Narrative || row.message || row.Message || "";
+
+        // Heuristic: if narrative contains no spaces (likely joined text), try to restore spacing.
+        const restoreSpaces = (s: string) => {
+          if (!s) return s;
+          // If text already contains spaces, assume it's fine.
+          if (s.includes(" ")) return s;
+          // Add a space after common punctuation if missing
+          let t = s.replace(/([,;:.!?])([A-Za-z0-9"'`‘’“”])/g, "$1 $2");
+          // Insert space before capital letters that follow lower-case letters (e.g., 'AsimMunir' -> 'Asim Munir')
+          t = t.replace(/([a-z\p{Ll}])([A-Z\p{Lu}])/gu, "$1 $2");
+          // Insert space between a letter and a digit or digit and letter
+          t = t.replace(/([A-Za-z])(\d)/g, "$1 $2").replace(/(\d)([A-Za-z])/g, "$1 $2");
+          return t;
+        };
+
+        const narrativeValue = restoreSpaces(rawNarrative);
 
         const result = {
           id: row.id || row.ID || `${tableName}-${index}`,
@@ -79,7 +119,7 @@ MOST LIKELY CAUSE: Row Level Security (RLS) is blocking access
           platform: (row.platform || row.Platform || "Twitter") as any,
           location: row.location || row.Location || "Unknown",
           engagements: parseInt(row.engagement || row.Engagement || row.engagements || row.Engagements || 0),
-          narrative: row.narrative || row.Narrative || row.message || row.Message || "",
+          narrative: narrativeValue,
           geoCoordinates: row.geo_coordinates || row.Geo_Coordinates || row.coordinates || "",
           date: dateValue,
           dateFrom: dateFromValue,
