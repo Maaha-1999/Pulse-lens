@@ -21,6 +21,8 @@ export default function Dashboard() {
   const [filter, setFilter] = useState("");
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
+  const [fromOpen, setFromOpen] = useState(false);
+  const [toOpen, setToOpen] = useState(false);
   
   const { data: rawData = [], isLoading, error } = useSocialData(activeTopic);
   const currentTopicName = topics.find(t => t.id === activeTopic)?.name;
@@ -29,29 +31,33 @@ export default function Dashboard() {
   const handleSelectFrom = (d?: Date | undefined) => {
     if (!d) {
       setDateFrom(undefined);
+      setFromOpen(false);
       return;
     }
     if (dateTo && d > dateTo) {
       // swap
       setDateFrom(dateTo);
       setDateTo(d);
-      return;
+    } else {
+      setDateFrom(d);
     }
-    setDateFrom(d);
+    setFromOpen(false);
   };
 
   const handleSelectTo = (d?: Date | undefined) => {
     if (!d) {
       setDateTo(undefined);
+      setToOpen(false);
       return;
     }
     if (dateFrom && d < dateFrom) {
       // swap
       setDateTo(dateFrom);
       setDateFrom(d);
-      return;
+    } else {
+      setDateTo(d);
     }
-    setDateTo(d);
+    setToOpen(false);
   };
 
   // Filter data based on Date Range (for Stats)
@@ -63,55 +69,65 @@ export default function Dashboard() {
       return rawData;
     }
 
+    // Convert Date objects to YYYY-MM-DD strings
     const pad = (n: number) => String(n).padStart(2, "0");
     const toYMD = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
-    const fromYMD = dateFrom ? toYMD(dateFrom) : undefined;
-    const toYMDStr = dateTo ? toYMD(dateTo) : undefined;
+    const fromYMD = dateFrom ? toYMD(dateFrom) : null;
+    const toYMD_str = dateTo ? toYMD(dateTo) : null;
 
-    console.log(`Filtering for range: ${fromYMD || "(none)"} -> ${toYMDStr || "(none)"}`);
+    console.log(`📅 Filtering for range: ${fromYMD || "(none)"} to ${toYMD_str || "(none)"}`);
 
     const filtered = rawData.filter((post) => {
-      // Parse post dateFrom/dateTo (fall back to post.date) into local YMD string
+      // Get the raw date strings from post
       const rawFrom = post.dateFrom || post.date || "";
       const rawTo = post.dateTo || rawFrom;
 
-      const parseToLocalYMD = (s: string) => {
+      // Normalize dates - extract YYYY-MM-DD only
+      const normalizeDate = (s: string) => {
         if (!s) return "";
         const str = String(s).trim();
-        // If already normalized YYYY-MM-DD from the data layer, return directly
+        // If already YYYY-MM-DD, return as-is
         if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
-        const d = new Date(str);
-        if (Number.isNaN(d.getTime())) return "";
-        // Use UTC getters to avoid local timezone shifting the date
-        const y = d.getUTCFullYear();
-        const m = pad(d.getUTCMonth() + 1);
-        const day = pad(d.getUTCDate());
-        return `${y}-${m}-${day}`;
+        // Extract YYYY-MM-DD from datetime strings
+        const match = str.match(/^(\d{4}-\d{2}-\d{2})/);
+        return match ? match[1] : "";
       };
 
-      const postFrom = parseToLocalYMD(rawFrom);
-      const postTo = parseToLocalYMD(rawTo) || postFrom;
+      const postFrom = normalizeDate(rawFrom);
+      const postTo = normalizeDate(rawTo) || postFrom;
 
-      // If both from and to are selected, check for any overlap
-      if (fromYMD && toYMDStr) {
-        return postFrom <= toYMDStr && postTo >= fromYMD;
+      if (!postFrom) {
+        return false; // Skip posts with no valid date
       }
 
-      // If only from is selected, check whether the post covers that day
-      if (fromYMD && !toYMDStr) {
-        return postFrom <= fromYMD && postTo >= fromYMD;
+      console.log(`  Post: ${postFrom} to ${postTo}`);
+
+      // Both dates selected: post must be COMPLETELY within the filter range
+      if (fromYMD && toYMD_str) {
+        const passes = postFrom >= fromYMD && postTo <= toYMD_str;
+        console.log(`    Filter: ${fromYMD} to ${toYMD_str} -> ${passes ? '✅' : '❌'}`);
+        return passes;
       }
 
-      // If only to is selected, check whether the post covers that day
-      if (!fromYMD && toYMDStr) {
-        return postFrom <= toYMDStr && postTo >= toYMDStr;
+      // Only "from" selected: post must end on or after fromYMD
+      if (fromYMD && !toYMD_str) {
+        const passes = postTo >= fromYMD;
+        console.log(`    From ${fromYMD} onwards -> ${passes ? '✅' : '❌'}`);
+        return passes;
+      }
+
+      // Only "to" selected: post must start on or before toYMD
+      if (!fromYMD && toYMD_str) {
+        const passes = postFrom <= toYMD_str;
+        console.log(`    Up to ${toYMD_str} -> ${passes ? '✅' : '❌'}`);
+        return passes;
       }
 
       return true;
     });
 
-    console.log(`Filtered data count: ${filtered.length}`);
+    console.log(`✅ Total filtered: ${filtered.length} posts`);
     return filtered;
   }, [rawData, dateFrom, dateTo]);
 
@@ -172,7 +188,7 @@ export default function Dashboard() {
           
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-2">
-                  <Popover>
+                  <Popover open={fromOpen} onOpenChange={setFromOpen}>
                     <PopoverTrigger asChild>
                       <Button
                         variant={"outline"}
@@ -186,12 +202,14 @@ export default function Dashboard() {
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="end">
-                      <Calendar
-                        mode="single"
-                        selected={dateFrom}
-                        onSelect={handleSelectFrom}
-                        initialFocus
-                      />
+                      {fromOpen && (
+                        <Calendar
+                          mode="single"
+                          selected={dateFrom}
+                          onSelect={handleSelectFrom}
+                          initialFocus
+                        />
+                      )}
                     </PopoverContent>
                   </Popover>
 
@@ -206,7 +224,7 @@ export default function Dashboard() {
                     </Button>
                   )}
 
-                  <Popover>
+                  <Popover open={toOpen} onOpenChange={setToOpen}>
                     <PopoverTrigger asChild>
                       <Button
                         variant={"outline"}
@@ -220,12 +238,14 @@ export default function Dashboard() {
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="end">
-                      <Calendar
-                        mode="single"
-                        selected={dateTo}
-                        onSelect={handleSelectTo}
-                        initialFocus
-                      />
+                      {toOpen && (
+                        <Calendar
+                          mode="single"
+                          selected={dateTo}
+                          onSelect={handleSelectTo}
+                          initialFocus
+                        />
+                      )}
                     </PopoverContent>
                   </Popover>
 

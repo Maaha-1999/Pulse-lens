@@ -21,8 +21,7 @@ export function useSocialData(topicId: string) {
       console.log(`Fetching data from table: ${tableName}`);
       const { data, error } = await supabase
         .from(tableName)
-        .select("*")
-        .order("Date_From", { ascending: false });
+        .select("*");
 
       if (error) {
         console.error(`❌ Error fetching data from ${tableName}:`, error);
@@ -65,21 +64,30 @@ MOST LIKELY CAUSE: Row Level Security (RLS) is blocking access
         `);
       }
 
-      // Helper to parse various date strings into local YYYY-MM-DD
-      const pad = (n: number) => String(n).padStart(2, "0");
-      const toYMD = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-      const parseToLocalYMD = (s: any) => {
+      // Normalize date string - keep YYYY-MM-DD format, extract date part from ISO strings
+      const normalizeDate = (s: any) => {
         if (!s) return "";
         const str = String(s).trim();
         // If already in YYYY-MM-DD format, return as-is
         if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
-        const d = new Date(str);
-        if (Number.isNaN(d.getTime())) return "";
-        // Use UTC getters to extract the date portion from ISO datetimes
-        const y = d.getUTCFullYear();
-        const m = pad(d.getUTCMonth() + 1);
-        const day = pad(d.getUTCDate());
-        return `${y}-${m}-${day}`;
+        // If it's an ISO datetime (YYYY-MM-DDTHH:MM:SS), extract just the date part
+        const match = str.match(/^(\d{4}-\d{2}-\d{2})/);
+        if (match) return match[1];
+        return "";
+      };
+
+      // Helper to restore spaces in concatenated text
+      const restoreSpaces = (s: string) => {
+        if (!s) return s;
+        // If text already contains spaces, assume it's fine.
+        if (s.includes(" ")) return s;
+        // Add a space after common punctuation if missing
+        let t = s.replace(/([,;:.!?])([A-Za-z0-9"'`''""])/g, "$1 $2");
+        // Insert space before capital letters that follow lower-case letters (e.g., 'AsimMunir' -> 'Asim Munir')
+        t = t.replace(/([a-z\p{Ll}])([A-Z\p{Lu}])/gu, "$1 $2");
+        // Insert space between a letter and a digit or digit and letter
+        t = t.replace(/([A-Za-z])(\d)/g, "$1 $2").replace(/(\d)([A-Za-z])/g, "$1 $2");
+        return t;
       };
 
       // Transform Supabase data to match SocialPost interface
@@ -88,28 +96,15 @@ MOST LIKELY CAUSE: Row Level Security (RLS) is blocking access
         const rawDateFrom = row.Date_From || row.date_from || row.DateFrom || row.dateFrom || "";
         const rawDateTo = row.Date_To || row.date_to || row.DateTo || row.dateTo || "";
         // Use Date_From as the primary date for backwards compatibility
-        const rawDatePrimary = rawDateFrom || rawDateTo || row.date || row.Date || row.created_at || new Date();
+        const rawDatePrimary = rawDateFrom || rawDateTo || row.date || row.Date || row.created_at || "";
 
-        const dateFromValue = parseToLocalYMD(rawDateFrom);
-        const dateToValue = parseToLocalYMD(rawDateTo);
-        const dateValue = parseToLocalYMD(rawDatePrimary);
+        const dateFromValue = normalizeDate(rawDateFrom);
+        const dateToValue = normalizeDate(rawDateTo);
+        const dateValue = normalizeDate(rawDatePrimary);
+
+        console.log(`Row ${index}: Raw dates - From: "${rawDateFrom}", To: "${rawDateTo}" -> Normalized - From: "${dateFromValue}", To: "${dateToValue}"`);
 
         const rawNarrative = row.narrative || row.Narrative || row.message || row.Message || "";
-
-        // Heuristic: if narrative contains no spaces (likely joined text), try to restore spacing.
-        const restoreSpaces = (s: string) => {
-          if (!s) return s;
-          // If text already contains spaces, assume it's fine.
-          if (s.includes(" ")) return s;
-          // Add a space after common punctuation if missing
-          let t = s.replace(/([,;:.!?])([A-Za-z0-9"'`‘’“”])/g, "$1 $2");
-          // Insert space before capital letters that follow lower-case letters (e.g., 'AsimMunir' -> 'Asim Munir')
-          t = t.replace(/([a-z\p{Ll}])([A-Z\p{Lu}])/gu, "$1 $2");
-          // Insert space between a letter and a digit or digit and letter
-          t = t.replace(/([A-Za-z])(\d)/g, "$1 $2").replace(/(\d)([A-Za-z])/g, "$1 $2");
-          return t;
-        };
-
         const narrativeValue = restoreSpaces(rawNarrative);
 
         const result = {
@@ -129,6 +124,23 @@ MOST LIKELY CAUSE: Row Level Security (RLS) is blocking access
       }) as SocialPost[];
 
       console.log(`Transformed ${transformed.length} rows`);
+      
+      // Sort by ID (maintain Supabase order)
+      transformed.sort((a, b) => {
+        const idA = String(a.id || "");
+        const idB = String(b.id || "");
+        
+        // If IDs are numeric, compare as numbers
+        if (!isNaN(Number(idA)) && !isNaN(Number(idB))) {
+          return Number(idA) - Number(idB);
+        }
+        
+        // Otherwise compare as strings
+        return idA.localeCompare(idB);
+      });
+      
+      console.log(`Sorted ${transformed.length} rows by ID`);
+      
       return transformed;
     },
   });

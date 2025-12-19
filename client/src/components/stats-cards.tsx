@@ -14,14 +14,12 @@ export default function StatsCards({ data }: StatsCardsProps) {
     {
       title: "Total Engagements",
       value: totalEngagements.toLocaleString(),
-      change: "+12.5%",
       icon: TrendingUp,
       color: "text-cyan-400",
     },
     {
       title: "Active Accounts",
       value: uniqueAccounts.toString(),
-      change: "+4.1%",
       icon: Users,
       color: "text-purple-400",
     },
@@ -39,12 +37,6 @@ export default function StatsCards({ data }: StatsCardsProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-mono">{stat.value}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              <span className={stat.change.startsWith("+") ? "text-emerald-400" : "text-rose-400"}>
-                {stat.change}
-              </span>{" "}
-              from yesterday
-            </p>
           </CardContent>
         </Card>
       ))}
