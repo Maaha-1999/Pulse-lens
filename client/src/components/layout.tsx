@@ -8,6 +8,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -15,11 +17,40 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
+  const { user, signOut } = useAuth();
+  const { toast } = useToast();
 
   const navItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/" },
     { icon: BarChart2, label: "Analytics", href: "/analytics" },
   ];
+
+  const handleLogout = async () => {
+    await signOut();
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out.",
+    });
+  };
+
+  // Get user initials from email
+  const getInitials = (email: string | undefined) => {
+    if (!email) return "JD";
+    const parts = email.split("@")[0].split(".");
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return email.substring(0, 2).toUpperCase();
+  };
+
+  // Get display name from email
+  const getDisplayName = (email: string | undefined) => {
+    if (!email) return "User";
+    const username = email.split("@")[0];
+    return username.split(".").map(part => 
+      part.charAt(0).toUpperCase() + part.slice(1)
+    ).join(" ");
+  };
 
   return (
     <div className="flex h-screen w-full bg-background text-foreground overflow-hidden">
@@ -59,17 +90,22 @@ export default function Layout({ children }: LayoutProps) {
           <div className="glass-card p-3 rounded-lg flex items-center justify-between gap-2">
             <div className="flex items-center gap-3 overflow-hidden">
               <div className="w-8 h-8 rounded-full bg-linear-to-br from-cyan-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
-                JD
+                {getInitials(user?.email)}
               </div>
               <div className="flex flex-col min-w-0">
-                <span className="text-xs font-medium truncate">John Doe</span>
+                <span className="text-xs font-medium truncate">{getDisplayName(user?.email)}</span>
                 <span className="text-[10px] text-muted-foreground truncate">Admin</span>
               </div>
             </div>
             
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full shrink-0">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full shrink-0"
+                  onClick={handleLogout}
+                >
                   <LogOut className="w-4 h-4" />
                 </Button>
               </TooltipTrigger>
