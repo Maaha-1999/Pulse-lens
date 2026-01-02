@@ -116,6 +116,13 @@
   body {
     @apply font-sans antialiased bg-background text-foreground selection:bg-primary/20 selection:text-primary;
   }
+  
+  /* Mobile-first responsive design */
+  @media (max-width: 640px) {
+    body {
+      @apply text-sm;
+    }
+  }
 }
 
 @layer utilities {
@@ -129,5 +136,36 @@
 
   .text-gradient {
     @apply bg-clip-text text-transparent bg-linear-to-r from-cyan-400 to-purple-500;
+  }
+
+  /* Responsive scrollbar */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary)) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary));
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.8);
+  }
+
+  /* Touch-friendly sizing for mobile */
+  @media (max-width: 640px) {
+    .touch-friendly-button {
+      @apply min-h-[44px] min-w-[44px];
+    }
   }
 }

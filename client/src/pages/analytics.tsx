@@ -105,20 +105,26 @@ export default function Analytics() {
 
   return (
     <Layout>
-      <div className="space-y-8 max-w-7xl mx-auto">
+      <div className="space-y-6 md:space-y-8 max-w-7xl mx-auto">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold tracking-tight text-white">Analytics Overview</h1>
-          <p className="text-muted-foreground">Deep dive into engagement metrics and platform performance.</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
+            Analytics Overview
+          </h1>
+          <p className="text-sm md:text-base text-muted-foreground">
+            Deep dive into engagement metrics and platform performance.
+          </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-2">
           <Card className="glass-panel border-border/50">
-            <CardHeader>
-              <CardTitle>Engagement Trends (Recent Activity)</CardTitle>
+            <CardHeader className="pb-3 md:pb-4">
+              <CardTitle className="text-lg md:text-xl">
+                Engagement Trends (Recent Activity)
+              </CardTitle>
             </CardHeader>
-            <CardContent className="h-[300px]">
+            <CardContent className="h-[250px] sm:h-[300px]">
               {engagementTrends.length === 0 ? (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
+                <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
                   No data available for the last 7 days
                 </div>
               ) : (
@@ -126,19 +132,50 @@ export default function Analytics() {
                   <AreaChart data={engagementTrends}>
                     <defs>
                       <linearGradient id="colorEngagement" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#22d3ee" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#22d3ee" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                    <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => value >= 1000 ? `${(value / 1000).toFixed(1)}k` : value} />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b' }}
-                      itemStyle={{ color: '#e2e8f0' }}
-                      formatter={(value: number) => [value.toLocaleString(), "Engagements"]}
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="#334155"
+                      vertical={false}
                     />
-                    <Area type="monotone" dataKey="engagement" stroke="#22d3ee" strokeWidth={2} fillOpacity={1} fill="url(#colorEngagement)" />
+                    <XAxis
+                      dataKey="name"
+                      stroke="#94a3b8"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      stroke="#94a3b8"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(value) =>
+                        value >= 1000 ? `${(value / 1000).toFixed(1)}k` : value
+                      }
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#0f172a",
+                        borderColor: "#1e293b",
+                      }}
+                      itemStyle={{ color: "#e2e8f0" }}
+                      formatter={(value: number) => [
+                        value.toLocaleString(),
+                        "Engagements",
+                      ]}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="engagement"
+                      stroke="#22d3ee"
+                      strokeWidth={2}
+                      fillOpacity={1}
+                      fill="url(#colorEngagement)"
+                    />
                   </AreaChart>
                 </ResponsiveContainer>
               )}
@@ -146,29 +183,59 @@ export default function Analytics() {
           </Card>
 
           <Card className="glass-panel border-border/50">
-            <CardHeader>
-              <CardTitle>Top Most Common Authors</CardTitle>
+            <CardHeader className="pb-3 md:pb-4">
+              <CardTitle className="text-lg md:text-xl">
+                Top Most Common Authors
+              </CardTitle>
             </CardHeader>
-            <CardContent className="h-[300px]">
+            <CardContent className="h-[250px] sm:h-[300px]">
               {topAuthors.length === 0 ? (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
+                <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
                   No author data available
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={topAuthors} layout="vertical" margin={{ left: 40, right: 20, top: 10, bottom: 10 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={false} />
-                    <XAxis type="number" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis dataKey="name" type="category" stroke="#e2e8f0" fontSize={12} tickLine={false} axisLine={false} width={100} />
-                    <Tooltip 
-                      cursor={{fill: 'rgba(255,255,255,0.05)'}}
-                      contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b' }}
-                      itemStyle={{ color: '#e2e8f0' }}
+                  <BarChart
+                    data={topAuthors}
+                    layout="vertical"
+                    margin={{ left: 60, right: 10, top: 10, bottom: 10 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="#334155"
+                      horizontal={false}
+                    />
+                    <XAxis
+                      type="number"
+                      stroke="#94a3b8"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      dataKey="name"
+                      type="category"
+                      stroke="#e2e8f0"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      width={60}
+                    />
+                    <Tooltip
+                      cursor={{ fill: "rgba(255,255,255,0.05)" }}
+                      contentStyle={{
+                        backgroundColor: "#0f172a",
+                        borderColor: "#1e293b",
+                      }}
+                      itemStyle={{ color: "#e2e8f0" }}
                       formatter={(value: number) => [value, "Posts"]}
                     />
                     <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={32}>
                       {topAuthors.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={AUTHOR_COLORS[index % AUTHOR_COLORS.length]} />
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={AUTHOR_COLORS[index % AUTHOR_COLORS.length]}
+                        />
                       ))}
                     </Bar>
                   </BarChart>
