@@ -10,8 +10,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { useMobileMenu } from "@/hooks/use-mobile-menu";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -21,12 +20,22 @@ export default function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
   const { user, signOut } = useAuth();
   const { toast } = useToast();
-  const { isOpen, toggle, close } = useMobileMenu();
+  const [isOpen, setIsOpen] = useState(false);
+
+  const toggle = () => {
+    console.log("Toggle clicked, current state:", isOpen);
+    setIsOpen(!isOpen);
+  };
+  
+  const close = () => {
+    console.log("Closing menu");
+    setIsOpen(false);
+  };
 
   // Close menu when route changes
   useEffect(() => {
     close();
-  }, [location, close]);
+  }, [location]);
 
   const navItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/" },
@@ -34,6 +43,7 @@ export default function Layout({ children }: LayoutProps) {
   ];
 
   const handleLogout = async () => {
+    close();
     await signOut();
     toast({
       title: "Logged out",
@@ -60,37 +70,57 @@ export default function Layout({ children }: LayoutProps) {
     ).join(" ");
   };
 
+  console.log("Render - isOpen:", isOpen);
+
   return (
     <div className="flex flex-col md:flex-row h-screen w-full bg-background text-foreground overflow-hidden">
       {/* Mobile Header */}
-      <div className="md:hidden h-16 border-b border-border bg-secondary/30 backdrop-blur-xl flex items-center justify-between px-4">
+      <div className="md:hidden h-16 border-b border-border bg-secondary/30 backdrop-blur-xl flex items-center justify-between px-4 relative z-50">
         <div className="flex items-center gap-2">
           <img src={logoImage} alt="PulseLens Logo" className="w-7 h-7 rounded-lg shadow-[0_0_15px_rgba(34,211,238,0.5)]" />
-          <span className="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-linear-to-r from-cyan-400 to-purple-500">
+          <span className="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-500">
             PulseLens
           </span>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggle}
-          className="h-8 w-8"
+        <button
+          type="button"
+          onClick={(e) => {
+            console.log("BUTTON CLICKED!");
+            e.preventDefault();
+            e.stopPropagation();
+            toggle();
+          }}
+          className="h-10 w-10 flex items-center justify-center rounded-md hover:bg-white/10 transition-colors"
         >
           {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </Button>
+        </button>
       </div>
+
+      {/* Mobile Menu Backdrop */}
+      <div
+        className={cn(
+          "fixed inset-0 bg-black/50 md:hidden transition-opacity duration-300",
+          isOpen ? "opacity-100 z-40" : "opacity-0 pointer-events-none -z-10"
+        )}
+        onClick={close}
+      />
 
       {/* Sidebar - Desktop + Mobile Overlay */}
       <aside
         className={cn(
-          "fixed md:static inset-0 md:inset-auto z-40 w-64 border-r border-border bg-secondary/30 backdrop-blur-xl flex flex-col transition-opacity duration-300",
-          isOpen ? "opacity-100" : "opacity-0 md:opacity-100 pointer-events-none md:pointer-events-auto"
+          "fixed md:static inset-y-0 left-0 w-64 border-r border-border bg-secondary/30 backdrop-blur-xl flex flex-col transition-transform duration-300 ease-in-out",
+          // Desktop: always visible
+          "md:translate-x-0 md:z-0",
+          // Mobile: slide in from left when open, higher z-index
+          isOpen ? "translate-x-0 z-50" : "-translate-x-full z-50",
+          // Add top margin on mobile to account for header
+          "top-16 md:top-0"
         )}
       >
         <div className="h-16 hidden md:flex items-center px-6 border-b border-border/50">
           <div className="flex items-center gap-3">
             <img src={logoImage} alt="PulseLens Logo" className="w-8 h-8 rounded-lg shadow-[0_0_15px_rgba(34,211,238,0.5)]" />
-            <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-linear-to-r from-cyan-400 to-purple-500">
+            <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-500">
               PulseLens
             </span>
           </div>
@@ -101,7 +131,8 @@ export default function Layout({ children }: LayoutProps) {
             const isActive = location === item.href;
             return (
               <Link key={item.href} href={item.href}>
-                <div
+                <a
+                  onClick={close}
                   className={cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer",
                     isActive
@@ -110,8 +141,8 @@ export default function Layout({ children }: LayoutProps) {
                   )}
                 >
                   <item.icon className={cn("w-4 h-4", isActive ? "text-primary" : "text-muted-foreground")} />
-                  <span className="hidden md:inline">{item.label}</span>
-                </div>
+                  <span>{item.label}</span>
+                </a>
               </Link>
             );
           })}
@@ -120,10 +151,10 @@ export default function Layout({ children }: LayoutProps) {
         <div className="p-4 border-t border-border/50">
           <div className="glass-card p-3 rounded-lg flex items-center justify-between gap-2">
             <div className="flex items-center gap-3 overflow-hidden">
-              <div className="w-8 h-8 rounded-full bg-linear-to-br from-cyan-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
                 {getInitials(user?.email)}
               </div>
-              <div className="hidden md:flex flex-col min-w-0">
+              <div className="flex flex-col min-w-0">
                 <span className="text-xs font-medium truncate">{getDisplayName(user?.email)}</span>
                 <span className="text-[10px] text-muted-foreground truncate">Admin</span>
               </div>
@@ -145,14 +176,6 @@ export default function Layout({ children }: LayoutProps) {
           </div>
         </div>
       </aside>
-
-      {/* Mobile Menu Backdrop */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-30 bg-black/50 md:hidden"
-          onClick={close}
-        />
-      )}
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-full md:h-screen overflow-hidden relative">
